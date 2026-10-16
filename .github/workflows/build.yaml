@@ -1,0 +1,132 @@
+name: Build
+
+on:
+    workflow_dispatch: {}
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+    contents: read
+
+jobs:
+    build:
+        name: Build & Test
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        steps:
+            - name: Checkout Repository
+              uses: actions/checkout@v7.0.1
+
+            - name: Set Up JDK
+              uses: actions/setup-java@v6.1.0
+              with:
+                  distribution: temurin
+                  java-version: '25'
+
+            - name: Set Up Gradle
+              uses: gradle/actions/setup-gradle@v6.4.0
+
+            - name: Build, Test, Verify Formatting & Coverage
+              run: ./gradlew build --stacktrace
+
+            - name: Upload Plugin Jar
+              uses: actions/upload-artifact@v7.0.2
+              with:
+                  name: plugin-jar
+                  path: build/libs/SpawnBuildRights-*.jar
+                  if-no-files-found: error
+
+            - name: Upload Reports
+              if: always()
+              uses: actions/upload-artifact@v7.0.2
+              with:
+                  name: reports
+                  path: |
+                      build/reports/tests/
+                      build/reports/jacoco/
+                  if-no-files-found: ignore
+
+    load-test:
+        name: Load Test (${{ matrix.server }})
+        needs: build
+        runs-on: ubuntu-latest
+        timeout-minutes: 25
+        strategy:
+            fail-fast: false
+            matrix:
+                server: [PAPER, PURPUR, FOLIA]
+        steps:
+            - name: Download Plugin Jar
+              uses: actions/download-artifact@v8.0.2
+              with:
+                  name: plugin-jar
+                  path: data/plugins
+
+            - name: Boot ${{ matrix.server }} and Verify the Plugin Enables
+              env:
+                  SERVER: ${{ matrix.server }}
+                  MC_VERSION: '26.3'
+                  # The same image as src/serverTest's PaperServer.
+                  IMAGE: 'itzg/minecraft-server:java25@sha256:5cf064b103ea7470c8ec6d90ad9a602863fea8fb5dfd4e3a0224a19d55e9e50d'
+              run: |
+                  set -euo pipefail
+
+                  docker run -d --name mc \
+                      -e EULA=TRUE \
+                      -e TYPE="$SERVER" \
+                      -e VERSION="$MC_VERSION" \
+                      -e ONLINE_MODE=FALSE \
+                      -e MAX_TICK_TIME=-1 \
+                      -e MEMORY=2G \
+                      -v "$PWD/data:/data" \
+                      "$IMAGE"
+
+                  # The plugin logs its store once it has enabled. A first boot downloads the server and
+                  # generates a world, hence the long wait.
+                  deadline=$((SECONDS + 1200))
+                  while [ "$SECONDS" -lt "$deadline" ]; do
+                      logs="$(docker logs mc 2>&1 || true)"
+                      if echo "$logs" | grep -q "\[SpawnBuildRights\] Store: "; then
+                          echo "::notice::SpawnBuildRights enabled on ${SERVER}"
+                          echo "$logs" | grep -i "spawnbuildrights" || true
+                          docker rm -f mc >/dev/null 2>&1 || true
+                          exit 0
+                      fi
+                      if echo "$logs" | grep -qE "Error occurred while enabling SpawnBuildRights|Disabling SpawnBuildRights|Could not load 'plugins"; then
+                          echo "::error::SpawnBuildRights failed to load on ${SERVER}"
+                          echo "$logs" | tail -n 120
+                          docker rm -f mc >/dev/null 2>&1 || true
+                          exit 1
+                      fi
+                      sleep 10
+                  done
+
+                  echo "::error::Timed out waiting for SpawnBuildRights to enable on ${SERVER}"
+                  docker logs mc 2>&1 | tail -n 120 || true
+                  exit 1
+
+    server-tests:
+        name: Server Tests
+        runs-on: ubuntu-latest
+        timeout-minutes: 45
+        steps:
+            - name: Checkout Repository
+              uses: actions/checkout@v7.0.1
+
+            - name: Set Up JDK
+              uses: actions/setup-java@v6.1.0
+              with:
+                  distribution: temurin
+                  java-version: '25'
+
+            - name: Set Up Gradle
+              uses: gradle/actions/setup-gradle@v6.4.0
+
+            - name: Boot Real Servers and Observe the Gate
+              run: ./gradlew serverTest --no-daemon

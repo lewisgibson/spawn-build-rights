@@ -1,0 +1,14 @@
+# Build output
+build/
+.gradle/
+
+# run-paper test server
+run/
+
+# Git worktrees
+.worktrees/
+
+# Local Claude settings
+.claude/settings.local.json
+node_modules/
+package-lock.json

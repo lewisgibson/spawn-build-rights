@@ -1,0 +1,13 @@
+# Normalise line endings: LF in the repo, native on checkout is disabled to keep
+# builds reproducible across contributors.
+* text=auto eol=lf
+
+# The Gradle wrapper keeps the line endings Gradle generates (LF for gradlew, CRLF for
+# gradlew.bat) so a wrapper bump never shows as a whole-file rewrite.
+gradlew text eol=lf
+*.bat -text
+gradle-wrapper.jar binary
+
+# Binary assets
+*.jar binary
+*.png binary

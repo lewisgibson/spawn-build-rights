@@ -1,0 +1,48 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# run-paper test server
+run/
+
+# Logs
+*.log
+
+# IDEs and editors
+.idea/
+*.iml
+*.ipr
+*.iws
+.settings/
+.project
+.classpath
+.vscode/
+bin/
+out/
+
+# One machine's notes and settings for agents (never commit).
+CLAUDE.local.md
+AGENTS.local.md
+notes.local.md
+.claude/settings.local.json
+.claude/*.lock
+
+# Git worktrees
+.worktrees/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Java
+*.class
+hs_err_pid*
+replay_pid*
+
+# Node tooling (prettier pin for the hook and the Lint workflow)
+node_modules/
+
+# Python
+__pycache__/
+.coverage

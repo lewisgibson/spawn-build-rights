@@ -1,0 +1,46 @@
+name: SpawnBuildRights
+version: '${version}'
+main: com.lewisgibson.spawnbuildrights.bukkit.SpawnBuildRightsPlugin
+# Classic plugin.yml rather than paper-plugin.yml so the one jar loads on Paper and on every Paper
+# fork (Purpur, Folia) alike.
+api-version: '26.3'
+# Protection runs in Bukkit event callbacks that read only coordinates and the event's own entities;
+# there are no scheduled world scans or block edits. Config reloads and edits are serialised under
+# one lock and the store is written on its own thread, so it is safe under Folia's regionised
+# scheduler.
+folia-supported: true
+authors:
+    - lewisgibson
+description: Extends vanilla spawn protection so players earn the right to build at spawn by playing
+website: https://github.com/lewisgibson/spawn-build-rights
+
+# The connection pool and the drivers for the PostgreSQL and MySQL stores. Paper downloads them
+# from Maven Central the first time the plugin loads; the versions are filled in from
+# gradle/libs.versions.toml at build time. SQLite needs nothing here: Paper ships its driver.
+libraries:
+    - com.zaxxer:HikariCP:${hikari}
+    - org.postgresql:postgresql:${postgresql}
+    - org.mariadb.jdbc:mariadb-java-client:${mariadb}
+
+permissions:
+    spawnbuildrights.build:
+        description: Build in the spawn region whatever your playtime. Set it false to revoke access a player has earned.
+        default: op
+    spawnbuildrights.info:
+        description: Allows /spawnbuildrights info. Without it the command is hidden and refused, so the plugin is not advertised to players.
+        default: op
+    spawnbuildrights.admin:
+        description: Allows the /spawnbuildrights reload, set, grant, revoke, reset and history subcommands.
+        default: op
+        children:
+            spawnbuildrights.info: true
+
+commands:
+    spawnbuildrights:
+        description: View and manage SpawnBuildRights.
+        usage: /spawnbuildrights <info|reload|set|grant|revoke|reset|history>
+        # Privacy hygiene: don't advertise the plugin set. A player without this node does not see
+        # the command in tab-complete and cannot run it.
+        permission: spawnbuildrights.info
+        aliases:
+            - sbr

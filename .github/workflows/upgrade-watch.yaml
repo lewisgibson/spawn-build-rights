@@ -1,0 +1,90 @@
+name: Upgrade Watch
+
+# Each week, boots the current jar on the newest Paper build, and opens an issue if the plugin no longer starts.
+# Nothing here is pinned on purpose: the point is to try what is newest.
+
+on:
+    workflow_dispatch: {}
+    schedule:
+        - cron: '0 6 * * 1'
+
+permissions:
+    contents: read
+    issues: write
+
+jobs:
+    load-latest-paper:
+        name: Load on Latest Paper
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        steps:
+            - name: Checkout Repository
+              uses: actions/checkout@v7.0.1
+
+            - name: Set Up JDK
+              uses: actions/setup-java@v6.1.0
+              with:
+                  distribution: temurin
+                  java-version: '25'
+
+            - name: Set Up Gradle
+              uses: gradle/actions/setup-gradle@v6.4.0
+
+            - name: Build Plugin Jar
+              run: ./gradlew jar --stacktrace
+
+            - name: Stage Jar
+              run: |
+                  mkdir -p data/plugins
+                  cp build/libs/SpawnBuildRights-*.jar data/plugins/
+
+            - name: Boot Latest Paper and Verify the Plugin Enables
+              run: |
+                  set -euo pipefail
+                  docker run -d --name mc \
+                      -e EULA=TRUE \
+                      -e TYPE=PAPER \
+                      -e VERSION=LATEST \
+                      -e ONLINE_MODE=FALSE \
+                      -e MAX_TICK_TIME=-1 \
+                      -e MEMORY=2G \
+                      -v "$PWD/data:/data" \
+                      itzg/minecraft-server:latest
+
+                  deadline=$((SECONDS + 900))
+                  while [ "$SECONDS" -lt "$deadline" ]; do
+                      logs="$(docker logs mc 2>&1 || true)"
+                      if echo "$logs" | grep -q "\[SpawnBuildRights\] Store: "; then
+                          echo "::notice::SpawnBuildRights enabled on the latest Paper"
+                          docker rm -f mc >/dev/null 2>&1 || true
+                          exit 0
+                      fi
+                      if echo "$logs" | grep -qE "Error occurred while enabling SpawnBuildRights|Disabling SpawnBuildRights|Could not load 'plugins"; then
+                          echo "::error::SpawnBuildRights failed to load on the latest Paper"
+                          echo "$logs" | tail -n 120
+                          docker rm -f mc >/dev/null 2>&1 || true
+                          exit 1
+                      fi
+                      sleep 10
+                  done
+                  echo "::error::Timed out waiting for SpawnBuildRights to enable on the latest Paper"
+                  docker logs mc 2>&1 | tail -n 120 || true
+                  exit 1
+
+            - name: Open an Issue on Failure
+              if: failure()
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+              run: |
+                  set -euo pipefail
+                  # One open issue is enough.
+                  open_count="$(gh issue list --state open --json title \
+                      --jq '[.[] | select(.title | test("failed to load on the latest Paper"))] | length')"
+                  if [ "$open_count" != "0" ]; then
+                      echo "An upgrade-watch issue is already open; not opening another."
+                      exit 0
+                  fi
+                  gh issue create \
+                      --title "SpawnBuildRights failed to load on the latest Paper build" \
+                      --body "The weekly upgrade-watch run could not enable the plugin on the latest Paper build. This usually means a server API the plugin relies on changed. Failed run: ${RUN_URL}"

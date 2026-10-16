@@ -1,0 +1,10 @@
+# gitleaks configuration.
+#
+# Extend the upstream default ruleset - every real secret detector stays on. This
+# repository ships no example credentials, so no allowlist is needed: a genuine
+# secret committed anywhere is caught.
+
+title = "spawn-build-rights gitleaks config"
+
+[extend]
+useDefault = true

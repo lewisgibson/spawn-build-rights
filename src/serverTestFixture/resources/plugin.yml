@@ -1,0 +1,12 @@
+name: SpawnBuildRightsTestFixture
+version: '0'
+main: com.lewisgibson.spawnbuildrights.fixture.TestFixturePlugin
+api-version: '26.3'
+description: Test-only. Fires a real block event for a fake player so the gate can be observed over RCON.
+# Load after the plugin under test so the event has a listener to reach.
+softdepend:
+    - SpawnBuildRights
+commands:
+    sbrtest:
+        description: Test-only. /sbrtest break <playtimeTicks> [granted|revoked]
+        usage: /sbrtest break <playtimeTicks> [granted|revoked]

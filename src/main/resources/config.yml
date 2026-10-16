@@ -1,0 +1,153 @@
+# SpawnBuildRights
+#
+# Everyone can use spawn from their first minute: doors, buttons, chests and workstations. Building
+# there (placing and breaking blocks, editing signs and the rest) opens up once a player has played
+# for `required-playtime`, or when an admin grants it with /sbr grant. docs/configuration.md on
+# GitHub explains every setting.
+
+region:
+    # The world the region is in. Leave blank to use the server's default (spawn) world.
+    world: ''
+
+    # The horizontal centre of the region, as block coordinates. Leave both blank to
+    # track the world spawn point automatically. `/sbr set center here` fills these in.
+    center-x: ''
+    center-z: ''
+
+    # 'square', the same shape as vanilla spawn protection, or 'circle'.
+    shape: square
+
+    # Radius in blocks. 16 is the same 33 by 33 square as vanilla's default spawn protection.
+    # `/sbr set radius <n>` changes it while the server runs.
+    radius: 16
+
+    # Vertical bounds (inclusive). The defaults span the full world height.
+    min-y: -64
+    max-y: 320
+
+# How long a player must have played to build in the region. Playtime is the game's own
+# statistic, the same total the player sees on their statistics screen. Write it with d, h, m and
+# s, alone or together, such as 12h, 90m or 1d12h.
+required-playtime: 36h
+
+# The permission that records a decision made by hand in your permissions plugin. Unset, which is
+# every ordinary player, leaves it to playtime. True lets the player build now whatever their
+# playtime, and operators have it by default. False stops them building in the region however long
+# they play, until it is unset again.
+build-permission: spawnbuildrights.build
+
+# Where the plugin keeps the decisions made with /sbr grant, revoke and reset, and the log of
+# those and of when each player earned build rights. Playtime itself is kept by the game, not
+# here. The default is one SQLite file in this folder and needs nothing set up.
+storage:
+    # 'sqlite' (the default), 'postgres' or 'mysql' (MySQL or MariaDB).
+    type: sqlite
+    sqlite:
+        # Relative to plugins/SpawnBuildRights/.
+        file: data.db
+    postgres:
+        host: localhost
+        port: 5432
+        database: spawnbuildrights
+        user: spawnbuildrights
+        password: ''
+        # Blank uses the user's default schema, which must already exist. The plugin creates its
+        # tables there on first start.
+        schema: ''
+        # TLS, as the PostgreSQL driver's sslmode: disable, allow, prefer (TLS when the server
+        # offers it), require (always TLS), verify-ca or verify-full (TLS, and the server's
+        # certificate must be signed by ssl-root-cert; verify-full also checks the host name).
+        ssl-mode: prefer
+        # The CA certificate for verify-ca and verify-full. Blank uses the driver's default,
+        # ~/.postgresql/root.crt for the user the server runs as.
+        ssl-root-cert: ''
+    mysql:
+        host: localhost
+        port: 3306
+        database: spawnbuildrights
+        user: spawnbuildrights
+        password: ''
+        # TLS, as the MariaDB driver's sslMode: disable, trust (TLS without checking the
+        # certificate), verify-ca or verify-full (TLS, and the server's certificate must be signed
+        # by ssl-ca-cert; verify-full also checks the host name).
+        ssl-mode: disable
+        # The CA certificate for verify-ca and verify-full. Blank uses Java's own trusted CAs.
+        ssl-ca-cert: ''
+
+# Warn in the console at startup when vanilla spawn protection is on, because it blocks players
+# who have earned build rights.
+warn-on-vanilla-spawn-protection: true
+
+# Also tell operators privately when they join.
+alert-operators-on-join: true
+
+# What players are told, in MiniMessage format (https://docs.advntr.dev/minimessage/). The first
+# three are the one sentence a player sees about their own build rights: on the action bar when a
+# change at spawn is refused, and in chat when they run /sbr. %required% is the playtime needed,
+# %played% their playtime and %remaining% how much longer they need, each in words such as
+# "14 hours and 31 minutes". %radius% is vanilla's spawn protection radius. A blank message sends
+# nothing, and a message left out of this file uses the one shipped with the plugin.
+messages:
+    build-allowed: '<green>You can build at spawn</green>'
+    build-denied: '<red>You can build at spawn after another <white>%remaining%</white> of play</red>'
+    build-revoked: '<red>Your permission to build at spawn has been removed</red>'
+    operator-conflict-warning: '<gold>SpawnBuildRights:</gold> <yellow>vanilla spawn protection is on with a radius of %radius% and stops players who have earned build rights. Set <white>spawn-protection=0</white> in server.properties</yellow>'
+
+# These protections use the same region as build rights, regardless of who caused the damage.
+# Missing keys default to true on upgrade. Set false and run /sbr reload to disable a feature.
+protection:
+    # Protect affected blocks and TNT chain reactions, even if an explosion starts outside.
+    explosions: true
+    # Hostile block changes (including enderman pickup/place) and mob/projectile ignition.
+    # Projectile ignition of TNT is included; direct player ignition follows build rights.
+    # Villager harvesting and sheep grazing keep their normal behaviour.
+    hostile-mob-changes: true
+    # Protect frames, paintings and armour stands from mobs, explosions, projectiles and fire.
+    # Player edits still follow build rights. This does not make players or animals invulnerable.
+    display-damage: true
+    # Stop blocks burning and fire spreading into the region, regardless of its origin.
+    # Later fire has no mob/player attribution. Permitted player ignition and campfires still work.
+    fire-damage: true
+    # Stop a falling block that started outside the region (sand, gravel, concrete powder, an
+    # anvil) landing inside it; it drops as its item instead, as it does landing on a torch.
+    # Blocks that start falling inside still land.
+    falling-blocks: true
+    # Stop water and lava flowing in from outside, and a dragon egg teleporting in from outside.
+    # Fluid placed inside the region still flows as normal.
+    fluid-flow: true
+    # Stop a piston outside the region pushing blocks into it, pulling blocks out of it, or moving
+    # or breaking blocks inside it: the piston does not move at all. Pistons inside work as normal.
+    pistons: true
+    # Stop a dispenser outside the region dispensing into a block inside it: buckets of water or
+    # lava, fire, placed blocks, anything. A projectile a dispenser outside fires (arrows, fire
+    # charges, snowballs, potions, fireworks) is removed as it enters. Players' and mobs'
+    # projectiles fly as normal. Droppers and dispensers inside the region are unaffected.
+    dispensers: true
+    # A tree, huge mushroom or bone meal used outside the region still grows, but no block of it
+    # is placed inside, like a world border. Saplings and bone meal inside grow as normal.
+    growth: true
+    # Defuse explosives, projectiles and falling blocks that come through a portal and would land
+    # in the region. Portals keep an entity's speed, and the End's exit portal always lands at the
+    # world spawn, so a wither fought beside it can blow up spawn and sand dropped into it piles up
+    # there. A defused entity is removed before it arrives, with no explosion and no damage; a
+    # falling block drops as its item where it arrives, so nothing is lost. Only things that can damage a player
+    # or the world are defused, each named below, so anything not named always passes: players,
+    # mobs, items, ender pearls, snowballs, eggs, experience bottles, fishing hooks, wind charges,
+    # plain firework rockets and rockets boosting an elytra, and any projectile a later game
+    # version adds. Each kind has its own switch; 'portal-arrivals: false' turns them all off.
+    portal-arrivals:
+        # Primed TNT and TNT minecarts.
+        explosives: true
+        # Wither skulls, black and blue.
+        wither-skulls: true
+        # Ghast, blaze and dragon fireballs.
+        fireballs: true
+        # Arrows (plain, spectral and tipped), tridents, llama spit, shulker bullets, and splash
+        # and lingering potions with a harmful effect (harming, poison and so on, as the game
+        # classes them). Healing, regeneration, water and other potions pass.
+        projectiles: true
+        # Firework rockets carrying an explosion (stars). A plain rocket is never defused.
+        fireworks: true
+        # Falling blocks: sand, gravel, concrete powder, anvils and the rest. Each arrives as its
+        # item instead of landing.
+        falling-blocks: true

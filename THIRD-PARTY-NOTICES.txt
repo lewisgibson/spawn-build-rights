@@ -1,0 +1,19 @@
+Third-Party Notices
+===================
+
+SpawnBuildRights is licensed under the GNU General Public License, version 3
+(see LICENSE).
+
+The plugin ships as a single jar and contains no third-party components. It
+compiles against the Paper API, which the server provides and this plugin does
+not redistribute. The two JDBC drivers it stores its records with are not in the
+jar either: plugin.yml names them and Paper downloads them from Maven Central
+when the plugin first loads.
+
+- SQLite JDBC (org.xerial:sqlite-jdbc), Apache License 2.0
+- PostgreSQL JDBC (org.postgresql:postgresql), BSD 2-Clause License
+- Checker Qual (org.checkerframework:checker-qual), MIT License, which the
+  PostgreSQL driver depends on
+
+The tools used to build and test the plugin (Gradle, JUnit, AssertJ, MockBukkit,
+JaCoCo, Spotless and JMH) are not part of what it ships.

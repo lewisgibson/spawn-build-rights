@@ -1,0 +1,22 @@
+tabWidth: 4
+useTabs: false
+singleQuote: true
+trailingComma: all
+printWidth: 120
+
+overrides:
+    - files: ['*.yml', '*.yaml']
+      options:
+          tabWidth: 4
+    - files: ['*.md']
+      options:
+          tabWidth: 2
+          # proseWrap never keeps prose unwrapped (one line per paragraph); a large printWidth
+          # stops prettier compacting wide Markdown tables into the unreadable `| --- |` form.
+          proseWrap: never
+          printWidth: 10000
+          # Code blocks in docs show real files (config.yml is 4-space), so leave them as written.
+          embeddedLanguageFormatting: off
+    - files: ['*.json']
+      options:
+          tabWidth: 4

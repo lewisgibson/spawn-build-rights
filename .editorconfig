@@ -1,0 +1,23 @@
+# https://editorconfig.org
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# YAML/JSON are formatted by prettier at tabWidth 4; keep the editor in sync.
+[*.{yml,yaml,json}]
+indent_size = 4
+
+# Markdown: prettier formats prose at tabWidth 2 and keeps trailing spaces (hard breaks).
+[*.md]
+indent_size = 2
+trim_trailing_whitespace = false
+
+# The Windows Gradle wrapper script keeps CRLF.
+[gradlew.bat]
+end_of_line = crlf
