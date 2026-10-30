@@ -24,7 +24,7 @@ jmh = "1.37"
 # build writes these versions into plugin.yml `libraries:` and Paper downloads them.
 hikaricp = "7.1.0"
 postgresql = "42.7.14"
-mariadbJdbc = "3.5.10"
+mariadbJdbc = "4.0.0"
 # The SQLite driver Paper 26.3 ships, which is the one the plugin runs on (a plugin cannot load
 # its own copy over the server's). Compiled and tested against the same version.
 sqliteJdbc = "3.49.1.0"
