@@ -16,9 +16,9 @@ jacoco = "0.8.15"
 # 1.37.0 is newer but Spotless 8.10.4 (the newest) cannot drive it: every file fails with an
 # InvocationTargetException. Move with the next Spotless release.
 googleJavaFormat = "1.36.1"
-spotless = "8.10.4"
+spotless = "8.11.0"
 runPaper = "3.1.0"
-jmhPlugin = "0.7.3"
+jmhPlugin = "0.7.4"
 jmh = "1.37"
 # The connection pool and the drivers the PostgreSQL and MySQL stores use. Not bundled: the
 # build writes these versions into plugin.yml `libraries:` and Paper downloads them.
