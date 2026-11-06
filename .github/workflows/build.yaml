@@ -30,7 +30,7 @@ jobs:
                   java-version: '25'
 
             - name: Set Up Gradle
-              uses: gradle/actions/setup-gradle@v6.4.0
+              uses: gradle/actions/setup-gradle@v6.4.1
 
             - name: Build, Test, Verify Formatting & Coverage
               run: ./gradlew build --stacktrace
@@ -126,7 +126,7 @@ jobs:
                   java-version: '25'
 
             - name: Set Up Gradle
-              uses: gradle/actions/setup-gradle@v6.4.0
+              uses: gradle/actions/setup-gradle@v6.4.1
 
             - name: Boot Real Servers and Observe the Gate
               run: ./gradlew serverTest --no-daemon
